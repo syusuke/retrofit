@@ -35,6 +35,7 @@ abstract class HttpServiceMethod<ResponseT, ReturnT> extends ServiceMethod<Retur
    */
   static <ResponseT, ReturnT> HttpServiceMethod<ResponseT, ReturnT> parseAnnotations(
       Retrofit retrofit, Method method, RequestFactory requestFactory) {
+    // kotlin suspend function
     boolean isKotlinSuspendFunction = requestFactory.isKotlinSuspendFunction;
     boolean continuationWantsResponse = false;
     boolean continuationBodyNullable = false;
@@ -59,25 +60,31 @@ abstract class HttpServiceMethod<ResponseT, ReturnT> extends ServiceMethod<Retur
       adapterType = new Utils.ParameterizedTypeImpl(null, Call.class, responseType);
       annotations = SkipCallbackExecutorImpl.ensurePresent(annotations);
     } else {
+      // 返回类型
       adapterType = method.getGenericReturnType();
     }
 
+    // 结果适配器 ResponseT 响应的类型,ReturnT 返回的类型,这两个类型可能要转换
     CallAdapter<ResponseT, ReturnT> callAdapter =
         createCallAdapter(retrofit, method, adapterType, annotations);
     Type responseType = callAdapter.responseType();
     if (responseType == okhttp3.Response.class) {
+      // 不支持  okhttp3.Response 请使用 ResponseBody 返回.返回类型检查
       throw methodError(method, "'"
           + getRawType(responseType).getName()
           + "' is not a valid response body type. Did you mean ResponseBody?");
     }
+    // retrofit.Response 这个结果,不能直接使用
     if (responseType == Response.class) {
       throw methodError(method, "Response must include generic type (e.g., Response<String>)");
     }
     // TODO support Unit for Kotlin?
     if (requestFactory.httpMethod.equals("HEAD") && !Void.class.equals(responseType)) {
+      // HEAD 方法必须使用 Void 类型??
       throw methodError(method, "HEAD method must use Void as response type.");
     }
 
+    // 结果转换器
     Converter<ResponseBody, ResponseT> responseConverter =
         createResponseConverter(retrofit, method, responseType);
 

@@ -131,7 +131,9 @@ public final class Retrofit {
    */
   @SuppressWarnings("unchecked") // Single-interface proxy creation guarded by parameter safety.
   public <T> T create(final Class<T> service) {
+    // check interface
     validateServiceInterface(service);
+    // jdk 动态代理
     return (T) Proxy.newProxyInstance(service.getClassLoader(), new Class<?>[] { service },
         new InvocationHandler() {
           private final Platform platform = Platform.get();
@@ -182,13 +184,22 @@ public final class Retrofit {
     }
   }
 
+  /**
+   * 加载方法
+   *
+   * @param method 当前运行的方法
+   * @return
+   */
   ServiceMethod<?> loadServiceMethod(Method method) {
+    // get from method cache,之前已经使用过一次,就会被解析并缓存
     ServiceMethod<?> result = serviceMethodCache.get(method);
     if (result != null) return result;
 
+    // double check
     synchronized (serviceMethodCache) {
       result = serviceMethodCache.get(method);
       if (result == null) {
+        // parse interface
         result = ServiceMethod.parseAnnotations(this, method);
         serviceMethodCache.put(method, result);
       }
@@ -408,6 +419,7 @@ public final class Retrofit {
   }
 
   /**
+   * create from builder
    * Build a new {@link Retrofit}.
    * <p>
    * Calling {@link #baseUrl} is required before calling {@link #build()}. All other methods
@@ -606,14 +618,17 @@ public final class Retrofit {
      */
     public Retrofit build() {
       if (baseUrl == null) {
+        // must baseUrl
         throw new IllegalStateException("Base URL required.");
       }
 
       okhttp3.Call.Factory callFactory = this.callFactory;
       if (callFactory == null) {
+        // default Ok http client
         callFactory = new OkHttpClient();
       }
 
+      // thread pool
       Executor callbackExecutor = this.callbackExecutor;
       if (callbackExecutor == null) {
         callbackExecutor = platform.defaultCallbackExecutor();

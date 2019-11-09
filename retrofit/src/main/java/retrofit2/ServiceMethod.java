@@ -22,9 +22,19 @@ import javax.annotation.Nullable;
 import static retrofit2.Utils.methodError;
 
 abstract class ServiceMethod<T> {
+  /**
+   * 解析注解
+   *
+   * @param retrofit
+   * @param method
+   * @param <T>
+   * @return
+   */
   static <T> ServiceMethod<T> parseAnnotations(Retrofit retrofit, Method method) {
+    // 解析了请求的关系
     RequestFactory requestFactory = RequestFactory.parseAnnotations(retrofit, method);
 
+    // 返回类型
     Type returnType = method.getGenericReturnType();
     if (Utils.hasUnresolvableType(returnType)) {
       throw methodError(method,

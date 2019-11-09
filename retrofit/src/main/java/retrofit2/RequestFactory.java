@@ -168,6 +168,7 @@ final class RequestFactory {
 
     RequestFactory build() {
       for (Annotation annotation : methodAnnotations) {
+        // 解析方法上的注解 不能处理多个注解
         parseMethodAnnotation(annotation);
       }
 
@@ -175,6 +176,7 @@ final class RequestFactory {
         throw methodError(method, "HTTP method annotation is required (e.g., @GET, @POST, etc.).");
       }
 
+      // check must has body
       if (!hasBody) {
         if (isMultipart) {
           throw methodError(method,
@@ -186,8 +188,11 @@ final class RequestFactory {
         }
       }
 
+      // 参数注解,每个方法上可能有多个注解
       int parameterCount = parameterAnnotationsArray.length;
+      // 参数处理器
       parameterHandlers = new ParameterHandler<?>[parameterCount];
+      // 最后一个参数 lastParameter index
       for (int p = 0, lastParameter = parameterCount - 1; p < parameterCount; p++) {
         parameterHandlers[p] =
             parseParameter(p, parameterTypes[p], parameterAnnotationsArray[p], p == lastParameter);
@@ -258,6 +263,10 @@ final class RequestFactory {
         return;
       }
 
+      //  检查是否有 {name} 这样的请求参数,如果有就会出错,请使用 @Query 注解
+      // http url like: http://ip:host/path?key=value&name=test
+      // http://ip:host/path?
+
       // Get the relative URL path and existing query string, if present.
       int question = value.indexOf('?');
       if (question != -1 && question < value.length() - 1) {
@@ -271,6 +280,7 @@ final class RequestFactory {
       }
 
       this.relativeUrl = value;
+      // 解析参数 {name} 这样的参数
       this.relativeUrlParamNames = parsePathParameters(value);
     }
 
@@ -297,6 +307,14 @@ final class RequestFactory {
       return builder.build();
     }
 
+    /**
+     * 处理 Retrofit 参数
+     * @param p 参数 Index
+     * @param parameterType 参数类型
+     * @param annotations 参数注解
+     * @param allowContinuation 是否是最后一个参数,暂时不知道有什么用
+     * @return
+     */
     private @Nullable ParameterHandler<?> parseParameter(
         int p, Type parameterType, @Nullable Annotation[] annotations, boolean allowContinuation) {
       ParameterHandler<?> result = null;
@@ -334,10 +352,21 @@ final class RequestFactory {
       return result;
     }
 
+    /**
+     * 方法参数处理器,参数的所有注解都分别处理了
+     *
+     * @param p 参数下标
+     * @param type 参数类型
+     * @param annotations 参数所有的注解
+     * @param annotation 当前处理的注解,上一个参数的其中一个注解
+     * @return
+     */
     @Nullable
     private ParameterHandler<?> parseParameterAnnotation(
         int p, Type type, Annotation[] annotations, Annotation annotation) {
+
       if (annotation instanceof Url) {
+        // @Url
         validateResolvableType(p, type);
         if (gotUrl) {
           throw parameterError(method, p, "Multiple @Url method annotations found.");
@@ -371,6 +400,7 @@ final class RequestFactory {
         }
 
       } else if (annotation instanceof Path) {
+        // @Path
         validateResolvableType(p, type);
         if (gotQuery) {
           throw parameterError(method, p, "A @Path parameter must not come after a @Query.");
@@ -398,6 +428,7 @@ final class RequestFactory {
         return new ParameterHandler.Path<>(method, p, name, converter, path.encoded());
 
       } else if (annotation instanceof Query) {
+        // @Query
         validateResolvableType(p, type);
         Query query = (Query) annotation;
         String name = query.value();
@@ -429,6 +460,7 @@ final class RequestFactory {
         }
 
       } else if (annotation instanceof QueryName) {
+        // @QueryName
         validateResolvableType(p, type);
         QueryName query = (QueryName) annotation;
         boolean encoded = query.encoded();
@@ -459,6 +491,7 @@ final class RequestFactory {
         }
 
       } else if (annotation instanceof QueryMap) {
+        // @QueryMap
         validateResolvableType(p, type);
         Class<?> rawParameterType = Utils.getRawType(type);
         gotQueryMap = true;
@@ -483,6 +516,7 @@ final class RequestFactory {
                 valueConverter, ((QueryMap) annotation).encoded());
 
       } else if (annotation instanceof Header) {
+        // @Header
         validateResolvableType(p, type);
         Header header = (Header) annotation;
         String name = header.value();
@@ -512,6 +546,7 @@ final class RequestFactory {
         }
 
       } else if (annotation instanceof HeaderMap) {
+        // @HeaderMap
         if (type == Headers.class) {
           return new ParameterHandler.Headers(method, p);
         }
@@ -538,6 +573,7 @@ final class RequestFactory {
         return new ParameterHandler.HeaderMap<>(method, p, valueConverter);
 
       } else if (annotation instanceof Field) {
+        // @Field
         validateResolvableType(p, type);
         if (!isFormEncoded) {
           throw parameterError(method, p, "@Field parameters can only be used with form encoding.");
@@ -573,6 +609,7 @@ final class RequestFactory {
         }
 
       } else if (annotation instanceof FieldMap) {
+        // FieldMap
         validateResolvableType(p, type);
         if (!isFormEncoded) {
           throw parameterError(method, p,
@@ -601,6 +638,7 @@ final class RequestFactory {
                 valueConverter, ((FieldMap) annotation).encoded());
 
       } else if (annotation instanceof Part) {
+        // @Part
         validateResolvableType(p, type);
         if (!isMultipart) {
           throw parameterError(method, p,
@@ -683,6 +721,7 @@ final class RequestFactory {
         }
 
       } else if (annotation instanceof PartMap) {
+        // PartMap
         validateResolvableType(p, type);
         if (!isMultipart) {
           throw parameterError(method, p,
@@ -718,6 +757,7 @@ final class RequestFactory {
         return new ParameterHandler.PartMap<>(method, p, valueConverter, partMap.encoding());
 
       } else if (annotation instanceof Body) {
+        // Body
         validateResolvableType(p, type);
         if (isFormEncoded || isMultipart) {
           throw parameterError(method, p,
@@ -738,6 +778,7 @@ final class RequestFactory {
         return new ParameterHandler.Body<>(method, p, converter);
 
       } else if (annotation instanceof Tag) {
+        // @Tag
         validateResolvableType(p, type);
 
         Class<?> tagType = Utils.getRawType(type);
