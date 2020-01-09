@@ -15,49 +15,21 @@
  */
 package retrofit2;
 
+import kotlin.coroutines.Continuation;
+import okhttp3.Headers;
+import okhttp3.*;
+import retrofit2.http.*;
+
+import javax.annotation.Nullable;
 import java.io.IOException;
 import java.lang.annotation.Annotation;
 import java.lang.reflect.Method;
 import java.lang.reflect.ParameterizedType;
 import java.lang.reflect.Type;
 import java.net.URI;
-import java.util.ArrayList;
-import java.util.LinkedHashSet;
-import java.util.List;
-import java.util.Map;
-import java.util.Set;
+import java.util.*;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
-import javax.annotation.Nullable;
-import kotlin.coroutines.Continuation;
-import okhttp3.Headers;
-import okhttp3.HttpUrl;
-import okhttp3.MediaType;
-import okhttp3.MultipartBody;
-import okhttp3.RequestBody;
-import retrofit2.http.Body;
-import retrofit2.http.DELETE;
-import retrofit2.http.Field;
-import retrofit2.http.FieldMap;
-import retrofit2.http.FormUrlEncoded;
-import retrofit2.http.GET;
-import retrofit2.http.HEAD;
-import retrofit2.http.HTTP;
-import retrofit2.http.Header;
-import retrofit2.http.HeaderMap;
-import retrofit2.http.Multipart;
-import retrofit2.http.OPTIONS;
-import retrofit2.http.PATCH;
-import retrofit2.http.POST;
-import retrofit2.http.PUT;
-import retrofit2.http.Part;
-import retrofit2.http.PartMap;
-import retrofit2.http.Path;
-import retrofit2.http.Query;
-import retrofit2.http.QueryMap;
-import retrofit2.http.QueryName;
-import retrofit2.http.Tag;
-import retrofit2.http.Url;
 
 import static retrofit2.Utils.methodError;
 import static retrofit2.Utils.parameterError;
@@ -513,7 +485,7 @@ final class RequestFactory {
             retrofit.stringConverter(valueType, annotations);
 
         return new ParameterHandler.QueryMap<>(method, p,
-                valueConverter, ((QueryMap) annotation).encoded());
+                valueConverter, ((QueryMap) annotation).encoded(),((QueryMap) annotation).nullAction());
 
       } else if (annotation instanceof Header) {
         // @Header

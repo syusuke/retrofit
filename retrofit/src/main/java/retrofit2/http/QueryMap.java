@@ -15,12 +15,13 @@
  */
 package retrofit2.http;
 
+import retrofit2.Retrofit;
+
 import java.lang.annotation.Annotation;
 import java.lang.annotation.Documented;
 import java.lang.annotation.Retention;
 import java.lang.annotation.Target;
 import java.lang.reflect.Type;
-import retrofit2.Retrofit;
 
 import static java.lang.annotation.ElementType.PARAMETER;
 import static java.lang.annotation.RetentionPolicy.RUNTIME;
@@ -59,4 +60,11 @@ import static java.lang.annotation.RetentionPolicy.RUNTIME;
 public @interface QueryMap {
   /** Specifies whether parameter names and values are already URL encoded. */
   boolean encoded() default false;
+  NullAction nullAction() default NullAction.EXCEPTION;
+  enum NullAction {
+    EXCEPTION,
+    DELETE_PARAM,
+    // null
+    NULL_STRING;
+  }
 }

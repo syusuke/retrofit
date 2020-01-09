@@ -15,16 +15,13 @@
  */
 package com.example.retrofit;
 
-import java.io.IOException;
-import okhttp3.HttpUrl;
-import okhttp3.Interceptor;
-import okhttp3.OkHttpClient;
-import okhttp3.Request;
-import okhttp3.ResponseBody;
+import okhttp3.*;
 import retrofit2.Call;
 import retrofit2.Response;
 import retrofit2.Retrofit;
 import retrofit2.http.GET;
+
+import java.io.IOException;
 
 /**
  * This example uses an OkHttp interceptor to change the target hostname dynamically at runtime.
@@ -47,6 +44,7 @@ public final class DynamicBaseUrl {
     @Override public okhttp3.Response intercept(Chain chain) throws IOException {
       Request request = chain.request();
       String host = this.host;
+      // config here
       if (host != null) {
         HttpUrl newUrl = request.url().newBuilder()
             .host(host)
@@ -67,9 +65,11 @@ public final class DynamicBaseUrl {
         .build();
 
     Retrofit retrofit = new Retrofit.Builder()
-        .baseUrl("http://www.github.com/")
+        .baseUrl("http://global_test")
         .callFactory(okHttpClient)
         .build();
+
+    hostSelectionInterceptor.setHost("github.com ");
 
     Pop pop = retrofit.create(Pop.class);
 
@@ -78,6 +78,8 @@ public final class DynamicBaseUrl {
     System.out.println(response1.body().string());
 
     hostSelectionInterceptor.setHost("www.pepsi.com");
+
+
 
     Response<ResponseBody> response2 = pop.robots().execute();
     System.out.println("Response from: " + response2.raw().request().url());

@@ -15,14 +15,15 @@
  */
 package retrofit2;
 
+import okhttp3.MultipartBody;
+import okhttp3.RequestBody;
+
+import javax.annotation.Nullable;
 import java.io.IOException;
 import java.lang.reflect.Array;
 import java.lang.reflect.Method;
 import java.util.Map;
 import java.util.Objects;
-import javax.annotation.Nullable;
-import okhttp3.MultipartBody;
-import okhttp3.RequestBody;
 
 abstract class ParameterHandler<T> {
   abstract void apply(RequestBuilder builder, @Nullable T value) throws IOException;
@@ -155,12 +156,14 @@ abstract class ParameterHandler<T> {
     private final int p;
     private final Converter<T, String> valueConverter;
     private final boolean encoded;
+    private final retrofit2.http.QueryMap.NullAction nullAction;
 
-    QueryMap(Method method, int p, Converter<T, String> valueConverter, boolean encoded) {
+    QueryMap(Method method, int p, Converter<T, String> valueConverter, boolean encoded, retrofit2.http.QueryMap.NullAction nullAction) {
       this.method = method;
       this.p = p;
       this.valueConverter = valueConverter;
       this.encoded = encoded;
+      this.nullAction = nullAction;
     }
 
     @Override void apply(RequestBuilder builder, @Nullable Map<String, T> value)
@@ -175,12 +178,19 @@ abstract class ParameterHandler<T> {
           throw Utils.parameterError(method, p, "Query map contained null key.");
         }
         T entryValue = entry.getValue();
+        String convertedEntryValue;
         if (entryValue == null) {
-          throw Utils.parameterError(method, p,
-                  "Query map contained null value for key '" + entryKey + "'.");
+          if (nullAction == retrofit2.http.QueryMap.NullAction.EXCEPTION) {
+            throw Utils.parameterError(method, p,
+                    "Query map contained null value for key '" + entryKey + "'.");
+          } else if (nullAction == retrofit2.http.QueryMap.NullAction.DELETE_PARAM) {
+            continue;
+          } else {
+            convertedEntryValue = "null";
+          }
+        } else {
+          convertedEntryValue = valueConverter.convert(entryValue);
         }
-
-        String convertedEntryValue = valueConverter.convert(entryValue);
         if (convertedEntryValue == null) {
           throw Utils.parameterError(method, p, "Query map value '"
               + entryValue
