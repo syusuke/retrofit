@@ -69,7 +69,7 @@ public final class DynamicBaseUrl {
         .callFactory(okHttpClient)
         .build();
 
-    hostSelectionInterceptor.setHost("github.com ");
+    hostSelectionInterceptor.setHost("github.com");
 
     Pop pop = retrofit.create(Pop.class);
 

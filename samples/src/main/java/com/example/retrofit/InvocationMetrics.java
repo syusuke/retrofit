@@ -15,17 +15,14 @@
  */
 package com.example.retrofit;
 
-import java.io.IOException;
-import okhttp3.Interceptor;
-import okhttp3.OkHttpClient;
-import okhttp3.Request;
-import okhttp3.Response;
-import okhttp3.ResponseBody;
+import okhttp3.*;
 import retrofit2.Call;
 import retrofit2.Invocation;
 import retrofit2.Retrofit;
 import retrofit2.http.GET;
 import retrofit2.http.Url;
+
+import java.io.IOException;
 
 /**
  * This example prints HTTP call metrics with the initiating method names and arguments.
@@ -54,6 +51,9 @@ public final class InvocationMetrics {
 
       Invocation invocation = request.tag(Invocation.class);
       if (invocation != null) {
+
+          System.out.println(invocation.method().getDeclaringClass());
+
         System.out.printf("%s.%s %s HTTP %s (%.0f ms)%n",
             invocation.method().getDeclaringClass().getSimpleName(),
             invocation.method().getName(),
